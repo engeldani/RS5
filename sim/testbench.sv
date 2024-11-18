@@ -36,7 +36,7 @@ module testbench
     localparam bit           COMPRESSED      = 1'b1;
     localparam bit           USE_XOSVM       = 1'b0;
     localparam bit           USE_ZIHPM       = 1'b1;
-    localparam bit           USE_ZKNE        = 1'b1;
+    localparam bit           USE_ZKNE        = 1'b0;
     localparam bit           VEnable         = 1'b0;
     localparam int           VLEN            = 256;
     localparam bit           BRANCHPRED      = 1'b1;
@@ -47,7 +47,7 @@ module testbench
 `endif
 
     localparam int           MEM_WIDTH       = 65_536;
-    localparam string        BIN_FILE        = "../app/riscv-tests/test.bin";
+    localparam string        BIN_FILE        = "../app/hello/hello.bin";
 
     localparam int           i_cnt = 1;
 
@@ -89,13 +89,13 @@ module testbench
     logic                   interrupt_ack;
     logic [63:0]            mtime;
     logic [31:0]            instruction;
-    logic                   enable_ram, enable_rtc, enable_plic, enable_tb;
+    logic                   enable_ram, enable_rtc, enable_plic, enable_tb, enable_simon;
     logic                   mem_operation_enable;
     logic [31:0]            mem_address, mem_data_read, mem_data_write;
     logic [3:0]             mem_write_enable;
     byte                    char;
-    logic [31:0]            data_ram, data_plic, data_tb;
-    logic                   enable_tb_r, enable_rtc_r, enable_plic_r;
+    logic [31:0]            data_ram, data_plic, data_tb, data_simon;
+    logic                   enable_tb_r, enable_rtc_r, enable_plic_r, enable_simon_r;
     logic                   mti, mei;
     logic [31:0]            irq;
 
@@ -108,35 +108,47 @@ module testbench
     always_comb begin
         if (mem_operation_enable) begin
             if (mem_address[31:28] < 4'h2) begin
-                enable_ram  = 1'b1;
-                enable_rtc  = 1'b0;
-                enable_plic = 1'b0;
-                enable_tb   = 1'b0;
+                enable_ram   = 1'b1;
+                enable_rtc   = 1'b0;
+                enable_plic  = 1'b0;
+                enable_tb    = 1'b0;
+                enable_simon = 1'b0;
             end
             else if (mem_address[31:28] < 4'h3) begin
-                enable_ram  = 1'b0;
-                enable_rtc  = 1'b1;
-                enable_plic = 1'b0;
-                enable_tb   = 1'b0;
+                enable_ram   = 1'b0;
+                enable_rtc   = 1'b1;
+                enable_plic  = 1'b0;
+                enable_tb    = 1'b0;
+                enable_simon = 1'b0;
             end
             else if (mem_address[31:28] < 4'h8) begin
-                enable_ram  = 1'b0;
-                enable_rtc  = 1'b0;
-                enable_plic = 1'b1;
-                enable_tb   = 1'b0;
+                enable_ram   = 1'b0;
+                enable_rtc   = 1'b0;
+                enable_plic  = 1'b1;
+                enable_tb    = 1'b0;
+                enable_simon = 1'b0;
+            end
+            else if (mem_address[31:28] < 4'hB) begin
+                enable_ram   = 1'b0;
+                enable_rtc   = 1'b0;
+                enable_plic  = 1'b0;
+                enable_tb    = 1'b0;
+                enable_simon = 1'b1;
             end
             else begin
                 enable_ram  = 1'b0;
                 enable_rtc  = 1'b0;
                 enable_plic = 1'b0;
                 enable_tb   = 1'b1;
+                enable_simon = 1'b0;
             end
         end
         else begin
-            enable_ram  = 1'b0;
-            enable_rtc  = 1'b0;
-            enable_plic = 1'b0;
-            enable_tb   = 1'b0;
+            enable_ram   = 1'b0;
+            enable_rtc   = 1'b0;
+            enable_plic  = 1'b0;
+            enable_tb    = 1'b0;
+            enable_simon = 1'b0;
         end
     end
 
@@ -144,6 +156,7 @@ module testbench
         enable_tb_r     <= enable_tb;
         enable_rtc_r    <= enable_rtc;
         enable_plic_r   <= enable_plic;
+        enable_simon_r  <= enable_simon;
     end
 
     always_comb begin
@@ -155,6 +168,9 @@ module testbench
         end
         else if (enable_plic_r) begin
             mem_data_read = data_plic;
+        end
+        else if (enable_simon_r) begin
+            mem_data_read = data_simon;
         end
         else begin
             mem_data_read = data_ram;
@@ -264,6 +280,20 @@ module testbench
         .mti_o      (mti),
         .mtime_o    (mtime)
     );
+
+//////////////////////////////////////////////////////////////////////////////
+// Simon
+//////////////////////////////////////////////////////////////////////////////
+
+    simon simon_inst (
+        .clk        (clk),                    
+        .reset_n    (reset_n),                
+        .en_i       (enable_simon),           
+        .addr_i     (mem_address[3:0]),       
+        .we_i       (mem_write_enable),       
+        .data_i     (mem_data_write),         
+        .data_o     (data_simon)              
+);
 
 //////////////////////////////////////////////////////////////////////////////
 // Memory Mapped regs

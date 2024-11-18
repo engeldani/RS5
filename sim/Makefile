@@ -24,7 +24,7 @@ default: run
 run:
 	@echo
 	@echo "-- VERILATE ----------------"
-	@$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT) --binary -j 0 -I../rtl -I../rtl/aes --timescale 1ns/1ns
+	@$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT) --binary -j 0 -I../rtl -I../TCC_Daniel/rtl -I../rtl/aes --timescale 1ns/1ns
 
 	@echo
 	@echo "-- RUN ---------------------"
@@ -36,7 +36,7 @@ run:
 	@echo "-- DONE --------------------"
 
 lint:
-	@$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT) --lint-only -I../rtl -I../rtl/aes --timing
+	@$(VERILATOR) $(VERILATOR_FLAGS) $(VERILATOR_INPUT) --lint-only -I../rtl -I../TCC_Daniel/rtl -I../rtl/aes --timing
 
 clean:
 	@echo
