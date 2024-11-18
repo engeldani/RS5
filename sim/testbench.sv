@@ -47,7 +47,7 @@ module testbench
 `endif
 
     localparam int           MEM_WIDTH       = 65_536;
-    localparam string        BIN_FILE        = "../app/hello/hello.bin";
+    localparam string        BIN_FILE        = "../app/simon-hw/simon-hw.bin";
 
     localparam int           i_cnt = 1;
 
@@ -114,26 +114,26 @@ module testbench
                 enable_tb    = 1'b0;
                 enable_simon = 1'b0;
             end
-            else if (mem_address[31:28] == 4'h2) begin
+            else if (mem_address[31:28] < 4'h3) begin
                 enable_ram   = 1'b0;
                 enable_rtc   = 1'b1;
                 enable_plic  = 1'b0;
                 enable_tb    = 1'b0;
                 enable_simon = 1'b0;
             end
-            else if (mem_address[31:28] == 4'h3) begin
-                enable_ram   = 1'b0;
-                enable_rtc   = 1'b0;
-                enable_plic  = 1'b0;
-                enable_tb    = 1'b0;
-                enable_simon = 1'b1;
-            end
-            else if (mem_address[31:28] == 4'h4) begin
+            else if (mem_address[31:28] < 4'h4) begin
                 enable_ram   = 1'b0;
                 enable_rtc   = 1'b0;
                 enable_plic  = 1'b1;
                 enable_tb    = 1'b0;
                 enable_simon = 1'b0;
+            end
+            else if (mem_address[31:28] < 4'h8) begin
+                enable_ram   = 1'b0;
+                enable_rtc   = 1'b0;
+                enable_plic  = 1'b0;
+                enable_tb    = 1'b0;
+                enable_simon = 1'b1;
             end
             else begin
                 enable_ram  = 1'b0;
