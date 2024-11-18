@@ -32,17 +32,17 @@ module testbench
 //////////////////////////////////////////////////////////////////////////////
 
     localparam mul_e         MULEXT          = MUL_M;
-    localparam atomic_e      AMOEXT          = AMO_A;
+    localparam atomic_e      AMOEXT          = AMO_OFF;
     localparam bit           COMPRESSED      = 1'b1;
     localparam bit           USE_XOSVM       = 1'b0;
-    localparam bit           USE_ZIHPM       = 1'b1;
+    localparam bit           USE_ZIHPM       = 1'b0;
     localparam bit           USE_ZKNE        = 1'b0;
     localparam bit           VEnable         = 1'b0;
     localparam int           VLEN            = 256;
     localparam bit           BRANCHPRED      = 1'b1;
 
 `ifndef SYNTH
-    localparam bit           PROFILING       = 1'b1;
+    localparam bit           PROFILING       = 1'b0;
     localparam bit           DEBUG           = 1'b0;
 `endif
 
@@ -114,32 +114,32 @@ module testbench
                 enable_tb    = 1'b0;
                 enable_simon = 1'b0;
             end
-            else if (mem_address[31:28] < 4'h3) begin
+            else if (mem_address[31:28] == 4'h2) begin
                 enable_ram   = 1'b0;
                 enable_rtc   = 1'b1;
                 enable_plic  = 1'b0;
                 enable_tb    = 1'b0;
                 enable_simon = 1'b0;
             end
-            else if (mem_address[31:28] < 4'h8) begin
-                enable_ram   = 1'b0;
-                enable_rtc   = 1'b0;
-                enable_plic  = 1'b1;
-                enable_tb    = 1'b0;
-                enable_simon = 1'b0;
-            end
-            else if (mem_address[31:28] < 4'hB) begin
+            else if (mem_address[31:28] == 4'h3) begin
                 enable_ram   = 1'b0;
                 enable_rtc   = 1'b0;
                 enable_plic  = 1'b0;
                 enable_tb    = 1'b0;
                 enable_simon = 1'b1;
             end
+            else if (mem_address[31:28] == 4'h4) begin
+                enable_ram   = 1'b0;
+                enable_rtc   = 1'b0;
+                enable_plic  = 1'b1;
+                enable_tb    = 1'b0;
+                enable_simon = 1'b0;
+            end
             else begin
                 enable_ram  = 1'b0;
                 enable_rtc  = 1'b0;
                 enable_plic = 1'b0;
-                enable_tb   = 1'b1;
+                enable_tb   = 1'b1; // 4'h8
                 enable_simon = 1'b0;
             end
         end
@@ -285,15 +285,15 @@ module testbench
 // Simon
 //////////////////////////////////////////////////////////////////////////////
 
-    simon simon_inst (
+    simon_interface simon_inst (
         .clk        (clk),                    
-        .reset_n    (reset_n),                
+        .rst_n      (reset_n),                
         .en_i       (enable_simon),           
-        .addr_i     (mem_address[3:0]),       
+        .addr_i     (mem_address[7:0]),       
         .we_i       (mem_write_enable),       
         .data_i     (mem_data_write),         
         .data_o     (data_simon)              
-);
+    );
 
 //////////////////////////////////////////////////////////////////////////////
 // Memory Mapped regs
