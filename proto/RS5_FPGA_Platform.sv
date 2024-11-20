@@ -25,10 +25,10 @@ module RS5_FPGA_Platform
 );
     logic [31:0]            cpu_instruction_address, cpu_instruction;
     logic [31:0]            cpu_data_address, cpu_data_in, cpu_data_out;
-    logic                   cpu_operation_enable, enable_ram, enable_peripherals, enable_rtc, enable_plic;
-    logic                   enable_rtc_r, enable_plic_r, enable_peripherals_r;
+    logic                   cpu_operation_enable, enable_ram, enable_peripherals, enable_rtc, enable_plic, enable_simon;
+    logic                   enable_rtc_r, enable_plic_r, enable_peripherals_r, enable_simon_r;
     logic [63:0]            mtime;
-    logic [31:0]            data_bram, data_plic, data_peripherals;
+    logic [31:0]            data_bram, data_plic, data_peripherals, data_simon;
     logic [63:0]            data_rtc;
     logic [3:0]             cpu_write_enable;
     logic                   stall;
@@ -50,24 +50,35 @@ module RS5_FPGA_Platform
                 enable_rtc          = 1'b0;
                 enable_plic         = 1'b0;
                 enable_peripherals  = 1'b0;
+                enable_simon        = 1'b0;
             end
             else if (cpu_data_address[31:28] < 4'h3) begin
                 enable_ram          = 1'b0;
                 enable_rtc          = 1'b1;
                 enable_plic         = 1'b0;
                 enable_peripherals  = 1'b0;
+                enable_simon        = 1'b0;
             end
-            else if (cpu_data_address[31:28] < 4'h8) begin
+            else if (cpu_data_address[31:28] < 4'h4) begin
                 enable_ram          = 1'b0;
                 enable_rtc          = 1'b0;
                 enable_plic         = 1'b1;
                 enable_peripherals  = 1'b0;
+                enable_simon        = 1'b0;
+            end
+            else if (cpu_data_address[31:28] < 4'h8) begin
+                enable_ram         = 1'b0;
+                enable_rtc         = 1'b0;
+                enable_plic        = 1'b0;
+                enable_peripherals = 1'b0;
+                enable_simon       = 1'b1;
             end
             else begin
                 enable_ram          = 1'b0;
                 enable_rtc          = 1'b0;
                 enable_plic         = 1'b0;
                 enable_peripherals  = 1'b1;
+                enable_simon        = 1'b0;
             end
         end
         else begin
@@ -75,6 +86,7 @@ module RS5_FPGA_Platform
             enable_rtc          = 1'b0;
             enable_plic         = 1'b0;
             enable_peripherals  = 1'b0;
+            enable_simon        = 1'b0;
         end
     end
 
@@ -82,6 +94,7 @@ module RS5_FPGA_Platform
         enable_rtc_r            <= enable_rtc;
         enable_plic_r           <= enable_plic;
         enable_peripherals_r    <= enable_peripherals;
+        enable_simon_r          <= enable_simon;
     end
 
     always_comb begin
@@ -93,6 +106,9 @@ module RS5_FPGA_Platform
         end
         else if (enable_peripherals_r) begin
             cpu_data_in = data_peripherals;
+        end
+        else if (enable_simon_r) begin
+            cpu_data_in = data_simon;
         end
         else begin
             cpu_data_in = data_bram;
@@ -185,6 +201,20 @@ module RS5_FPGA_Platform
         .iack_i  (interrupt_ack),
         .irq_o   (mei),
         .iack_o  (iack_peripherals)
+    );
+
+//////////////////////////////////////////////////////////////////////////////
+// Simon
+//////////////////////////////////////////////////////////////////////////////
+
+    simon_interface simon_inst (
+        .clk        (clk),                    
+        .rst_n      (reset_n),                
+        .en_i       (enable_simon),           
+        .addr_i     (cpu_data_address[7:0]),       
+        .we_i       (cpu_write_enable),       
+        .data_i     (cpu_data_out),         
+        .data_o     (data_simon)              
     );
 
 //////////////////////////////////////////////////////////////////////////////
