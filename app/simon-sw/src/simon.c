@@ -10,6 +10,8 @@
 #include <limits.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
+#include <riscv-csr.h>
 #include "simon.h"
 
 
@@ -55,7 +57,8 @@ uint8_t Simon_Init(SimSpk_Cipher *cipher_object, enum cipher_config_t cipher_cfg
     
     uint64_t tmp1,tmp2;
     uint64_t c = 0xFFFFFFFFFFFFFFFC; 
-    
+
+    uint32_t antes = csr_read_mcycle();    
     // Store First Key Schedule Entry
     memcpy(cipher_object->key_schedule, &sub_keys[0], word_bytes);
 
@@ -83,6 +86,8 @@ uint8_t Simon_Init(SimSpk_Cipher *cipher_object, enum cipher_config_t cipher_cfg
         // Append sub key to key schedule
         memcpy(cipher_object->key_schedule + (word_bytes * (i + 1)), &sub_keys[0], word_bytes);
     }
+    uint32_t agora = csr_read_mcycle();
+    printf("Key schedule SW: %lu\n", (agora-antes));
 
     if(cipher_cfg <= cfg_256_128) {
         cipher_object->encryptPtr = Simon_Encrypt_128;
@@ -103,6 +108,7 @@ uint8_t Simon_Encrypt(SimSpk_Cipher cipher_object, const void *plaintext, void *
 void Simon_Encrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, const uint8_t *plaintext,
                        uint8_t *ciphertext) {
 
+    uint32_t antes = csr_read_mcycle();
     const uint8_t word_size = 64;
     uint64_t *y_word = (uint64_t *)ciphertext;
     uint64_t *x_word = (((uint64_t *)ciphertext) + 1);
@@ -122,6 +128,8 @@ void Simon_Encrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, c
         // XOR with Round Key
         *x_word = temp ^ *(round_key_ptr + i);
     }
+    uint32_t agora = csr_read_mcycle();
+    printf("Encrypt SW: %lu\n", (agora-antes));
 }
 
 uint8_t Simon_Decrypt(SimSpk_Cipher cipher_object, const void *ciphertext, void *plaintext) {
@@ -131,7 +139,8 @@ uint8_t Simon_Decrypt(SimSpk_Cipher cipher_object, const void *ciphertext, void 
 
 void Simon_Decrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, const uint8_t *ciphertext,
                        uint8_t *plaintext){
-
+    
+    uint32_t antes = csr_read_mcycle();
     const uint8_t word_size = 64;
     uint64_t *x_word = (uint64_t *)plaintext;
     uint64_t *y_word = ((uint64_t *)plaintext) + 1;
@@ -151,4 +160,6 @@ void Simon_Decrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, c
         // XOR with Round Key
         *x_word = temp ^ *(round_key_ptr + i);
     }
+    uint32_t agora = csr_read_mcycle();
+    printf("Decrypt SW: %lu\n", (agora-antes));
 }

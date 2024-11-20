@@ -69,11 +69,11 @@ uint8_t Simon_Init(SimSpk_Cipher *cipher_object, enum cipher_config_t cipher_cfg
 
 
 uint8_t Simon_Encrypt(SimSpk_Cipher cipher_object, const void *plaintext, void *ciphertext) {
-    (*cipher_object.encryptPtr)(cipher_object.round_limit, cipher_object.key_schedule, plaintext, ciphertext);
+    (*cipher_object.encryptPtr)(cipher_object.round_limit, plaintext, ciphertext);
     return 0;
 }
 
-void Simon_Encrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, const uint8_t *plaintext,
+void Simon_Encrypt_128(const uint8_t round_limit, const uint8_t *plaintext,
                        uint8_t *ciphertext) {
 
     uint32_t antes = csr_read_mcycle();
@@ -91,11 +91,11 @@ void Simon_Encrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, c
 }
 
 uint8_t Simon_Decrypt(SimSpk_Cipher cipher_object, const void *ciphertext, void *plaintext) {
-    (*cipher_object.decryptPtr)(cipher_object.round_limit, cipher_object.key_schedule, ciphertext, plaintext);
+    (*cipher_object.decryptPtr)(cipher_object.round_limit, ciphertext, plaintext);
     return 0;
 }
 
-void Simon_Decrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, const uint8_t *ciphertext,
+void Simon_Decrypt_128(const uint8_t round_limit, const uint8_t *ciphertext,
                        uint8_t *plaintext){
     
     uint32_t antes = csr_read_mcycle();

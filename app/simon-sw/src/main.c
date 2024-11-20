@@ -37,7 +37,7 @@ void cipher_compare(const void *source, void *target, size_t n) {
 int main(void){
 
     // Create reusable cipher objects for each algorithm type
-    SimSpk_Cipher my_simon_cipher;
+    static SimSpk_Cipher my_simon_cipher;
 
     // Create generic tmp variables
     uint8_t ciphertext_buffer[16];
