@@ -21,3 +21,5 @@
 #define SIMON_CT_HH (*((volatile uint32_t*)0x4000002C))
 
 #define SIMON_CSR   (*((volatile uint32_t*)0x40000030))
+
+#define SIMON_MODE  (*((volatile uint32_t*)0x40000034))

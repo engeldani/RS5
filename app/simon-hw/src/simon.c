@@ -50,53 +50,11 @@ uint8_t Simon_Init(SimSpk_Cipher *cipher_object, enum cipher_config_t cipher_cfg
     uint16_t key_words =  key_sizes[cipher_cfg] / word_size;
     uint64_t mod_mask = ULLONG_MAX >> (64 - word_size);
 
-
-    uint32_t antes_sw = csr_read_mcycle();
-
-    uint64_t sub_keys[4] = {};
-    uint64_t tmp1,tmp2;
-    uint64_t c = 0xFFFFFFFFFFFFFFFC; 
-    // Setup
-    for(int i = 0; i < key_words; i++) {
-        memcpy(&sub_keys[i], key + (word_bytes * i), word_bytes);
-    }
-
-    // Store First Key Schedule Entry
-    memcpy(cipher_object->key_schedule, &sub_keys[0], word_bytes);
-
-    for (int i = 0; i < simon_rounds[cipher_cfg] - 1; i++) {
-        tmp1 = rshift_three(sub_keys[key_words - 1]);
-
-        if (key_words == 4) {
-            tmp1 ^= sub_keys[1];
-        }
-
-        tmp2 = rshift_one(tmp1);
-        tmp1 ^= sub_keys[0];
-        tmp1 ^= tmp2;
-
-        tmp2 = c ^ ((z_arrays[cipher_object->z_seq] >> (i % 62)) & 1);
-
-        tmp1 ^= tmp2;
-
-        // Shift Sub Words
-        for (int j = 0; j < (key_words - 1); j++) {
-            sub_keys[j] = sub_keys[j + 1];
-        }
-        sub_keys[key_words - 1] = tmp1 & mod_mask;
-
-        // Append sub key to key schedule
-        memcpy(cipher_object->key_schedule + (word_bytes * (i + 1)), &sub_keys[0], word_bytes);
-    }
-
-    uint32_t agora_sw = csr_read_mcycle();
-    printf("Key schedule SW: %lu\n", (agora_sw-antes_sw));
-
     // COPIA DA CHAVE INICIAL PARA O HARDWARE
-    uint32_t antes_hw = csr_read_mcycle();
+    uint32_t antes = csr_read_mcycle();
     memcpy(&SIMON_KEY, key, 16);
-    uint32_t agora_hw = csr_read_mcycle();
-    printf("Key schedule hw; %lu\n", (agora_hw-antes_hw));
+    uint32_t agora = csr_read_mcycle();
+    printf("Key schedule HW; %lu\n", (agora-antes));
     // FIM DA COPIA    
 
     if(cipher_cfg <= cfg_256_128) {
@@ -119,6 +77,7 @@ void Simon_Encrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, c
                        uint8_t *ciphertext) {
 
     uint32_t antes = csr_read_mcycle();
+    SIMON_MODE = 1;
     memcpy(&SIMON_PT, plaintext, 16);
 
     SIMON_CSR = 1; // start
@@ -138,29 +97,17 @@ uint8_t Simon_Decrypt(SimSpk_Cipher cipher_object, const void *ciphertext, void 
 
 void Simon_Decrypt_128(const uint8_t round_limit, const uint8_t *key_schedule, const uint8_t *ciphertext,
                        uint8_t *plaintext){
-
-    uint32_t antes = csr_read_mcycle();
-
-    const uint8_t word_size = 64;
-    uint64_t *x_word = (uint64_t *)plaintext;
-    uint64_t *y_word = ((uint64_t *)plaintext) + 1;
-    uint64_t *round_key_ptr = (uint64_t *)key_schedule;
-
-    *x_word = *(uint64_t *)ciphertext;
-    *y_word = *(((uint64_t *)ciphertext) + 1);
-
-    for(int8_t i = round_limit - 1; i >=0; i--) {
-
-        // Shift, AND , XOR ops
-        uint64_t temp = (shift_one(*x_word) & shift_eight(*x_word)) ^ *y_word ^ shift_two(*x_word);
-        
-        // Feistel Cross
-        *y_word = *x_word;
-        
-        // XOR with Round Key
-        *x_word = temp ^ *(round_key_ptr + i);
-    }
     
+    uint32_t antes = csr_read_mcycle();
+    SIMON_MODE = 0;
+    memcpy(&SIMON_PT, ciphertext, 16);
+
+    SIMON_CSR = 1; // start
+
+    while((SIMON_CSR & 0x00000002) == 0); // aguarda
+
+    memcpy(plaintext, &SIMON_CT, 16);
     uint32_t agora = csr_read_mcycle();
-    printf("Decrypt SW: %lu\n", (agora-antes));
+
+    printf("Decrypt HW: %lu\n", (agora-antes));
 }
